@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rime - Silence Perfected</title>
+    <!-- Tailwind for Layout & UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Three.js for 3D Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GSAP for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#050505',
+                            muted: '#888888',
+                            accent: '#e0e0e0',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            margin: 0;
+            background-color: #050505;
+            color: #ffffff;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #webgl-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .gradient-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, rgba(5, 5, 5, 0.4) 100%);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            width: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .hero-title {
+            background: linear-gradient(180deg, #FFFFFF 0%, #777777 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-badge {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary {
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: white;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Hide elements initially for GSAP intro */
+        .reveal-item {
+            opacity: 0;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="webgl-container"></div>
+    <div class="gradient-overlay"></div>
+
+    <div class="ui-layer">
+        <!-- Header -->
+        <header class="flex justify-between items-center px-8 md:px-16 py-8 pointer-events-auto reveal-item">
+            <div class="logo font-extrabold text-xl tracking-[0.2em] uppercase">RIME</div>
+            <nav class="hidden md:flex gap-12">
+                <a href="https://google.com" target="_blank" class="nav-link text-sm font-semibold tracking-wider uppercase">Collection</a>
+                <a href="https://google.com" target="_blank" class="nav-link text-sm font-semibold tracking-wider uppercase">Technology</a>
+                <a href="https://google.com" target="_blank" class="nav-link text-sm font-semibold tracking-wider uppercase">Experience</a>
+            </nav>
+            <div class="flex items-center">
+                <span class="text-sm font-bold tracking-tighter mr-2">CART</span>
+                <span class="bg-white text-black px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow flex flex-col justify-center px-8 md:px-24">
+            <div class="max-w-2xl pointer-events-auto">
+                <div class="glass-badge inline-flex items-center px-4 py-1.5 rounded-full text-[10px] uppercase tracking-[0.2em] font-semibold mb-8 reveal-item">
+                    <span class="w-1.5 h-1.5 bg-white rounded-full mr-2 animate-pulse"></span>
+                    Now Available: Series 01
+                </div>
+
+                <h1 class="hero-title text-6xl md:text-8xl font-extrabold leading-[1.1] mb-6 reveal-item">
+                    SILENCE<br>PERFECTED.
+                </h1>
+
+                <p class="text-brand-muted text-lg md:text-xl font-light max-w-lg mb-12 leading-relaxed reveal-item">
+                    Engineering a pure acoustic sanctuary. Experience industry-leading active noise cancellation paired with master-crafted materials.
+                </p>
+
+                <div class="flex flex-wrap gap-12 mb-12 reveal-item">
+                    <div class="flex flex-col">
+                        <span class="text-2xl font-semibold text-brand-accent italic tracking-tighter">48H</span>
+                        <span class="text-[10px] uppercase tracking-widest text-brand-muted mt-1">Playback</span>
+                    </div>
+                    <div class="flex flex-col border-l border-white/10 pl-8">
+                        <span class="text-2xl font-semibold text-brand-accent italic tracking-tighter">-42dB</span>
+                        <span class="text-[10px] uppercase tracking-widest text-brand-muted mt-1">ANC Depth</span>
+                    </div>
+                    <div class="flex flex-col border-l border-white/10 pl-8">
+                        <span class="text-2xl font-semibold text-brand-accent italic tracking-tighter">HD</span>
+                        <span class="text-[10px] uppercase tracking-widest text-brand-muted mt-1">Lossless</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6 reveal-item">
+                    <a href="https://google.com" target="_blank" class="btn-primary bg-white text-black px-10 py-5 rounded-full text-xs font-extrabold uppercase tracking-widest">
+                        Experience Rime
+                    </a>
+                    <a href="https://google.com" target="_blank" class="hidden sm:block group text-xs font-bold uppercase tracking-widest border-b border-white/20 pb-1 hover:border-white transition-all">
+                        View Details <span class="inline-block transition-transform group-hover:translate-x-1">→</span>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- 3D SCENE SETUP ---
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.02);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const isMobile = window.innerWidth < 768;
+        camera.position.z = isMobile ? 25 : 18;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        keyLight.position.set(5, 5, 5);
+        scene.add(keyLight);
+
+        const rimLight = new THREE.SpotLight(0xaaccff, 3);
+        rimLight.position.set(-5, 5, -5);
+        scene.add(rimLight);
+
+        // --- PROCEDURAL HEADPHONES ---
+        const headphones = new THREE.Group();
+        
+        // Materials
+        const metalMat = new THREE.MeshPhysicalMaterial({
+            color: 0x222222,
+            metalness: 0.9,
+            roughness: 0.2,
+            envMapIntensity: 1
+        });
+
+        const matteMat = new THREE.MeshStandardMaterial({
+            color: 0x0a0a0a,
+            roughness: 0.9
+        });
+
+        const leatherMat = new THREE.MeshStandardMaterial({
+            color: 0x111111,
+            roughness: 0.7
+        });
+
+        // Headband
+        const curve = new THREE.EllipseCurve(0, 0, 4.5, 5, 0, Math.PI, false, 0);
+        const points = curve.getPoints(50);
+        const threePoints = points.map(p => new THREE.Vector3(p.x, p.y, 0));
+        const headbandCurve = new THREE.CatmullRomCurve3(threePoints);
+        const headbandGeo = new THREE.TubeGeometry(headbandCurve, 64, 0.4, 12, false);
+        const headband = new THREE.Mesh(headbandGeo, matteMat);
+        headband.rotation.z = Math.PI;
+        headband.position.y = 1;
+        headphones.add(headband);
+
+        // Function to create Earcups
+        function createCup(isRight) {
+            const cupGroup = new THREE.Group();
+            
+            // Outer casing
+            const cupGeo = new THREE.CylinderGeometry(2, 2.2, 1, 32);
+            const cup = new THREE.Mesh(cupGeo, metalMat);
+            cup.rotation.z = Math.PI / 2;
+            cupGroup.add(cup);
+
+            // Cushion
+            const cushionGeo = new THREE.TorusGeometry(1.6, 0.5, 16, 32);
+            const cushion = new THREE.Mesh(cushionGeo, leatherMat);
+            cushion.position.x = isRight ? -0.5 : 0.5;
+            cushion.rotation.y = Math.PI / 2;
+            cupGroup.add(cushion);
+
+            // Inner Mesh
+            const innerGeo = new THREE.CircleGeometry(1.4, 32);
+            const inner = new THREE.Mesh(innerGeo, matteMat);
+            inner.position.x = isRight ? -0.6 : 0.6;
+            inner.rotation.y = isRight ? -Math.PI / 2 : Math.PI / 2;
+            cupGroup.add(inner);
+
+            cupGroup.position.x = isRight ? 4.5 : -4.5;
+            cupGroup.position.y = -0.5;
+            return cupGroup;
+        }
+
+        const rightCup = createCup(true);
+        const leftCup = createCup(false);
+        headphones.add(rightCup);
+        headphones.add(leftCup);
+
+        headphones.position.x = isMobile ? 0 : 5;
+        scene.add(headphones);
+
+        // --- INTERACTION ---
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetX = 0;
+        let targetY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+            mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+        });
+
+        window.addEventListener('resize', () => {
+            const isNowMobile = window.innerWidth < 768;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            camera.position.z = isNowMobile ? 25 : 18;
+            headphones.position.x = isNowMobile ? 0 : 5;
+        });
+
+        // --- ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime();
+
+            // Smooth parallax with damping
+            targetX += (mouseX - targetX) * 0.05;
+            targetY += (mouseY - targetY) * 0.05;
+
+            headphones.rotation.y = targetX * 0.5 + Math.sin(t * 0.5) * 0.1;
+            headphones.rotation.x = targetY * 0.2;
+            
+            // Idle float
+            headphones.position.y = Math.sin(t) * 0.3;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // --- INTRO REVEAL ---
+        window.onload = () => {
+            const tl = gsap.timeline({ defaults: { ease: "power4.out", duration: 1.5 } });
+
+            // Animate headphone entry
+            tl.from(headphones.position, {
+                y: 10,
+                duration: 2,
+                ease: "expo.out"
+            });
+
+            // Reveal UI elements sequentially
+            tl.to(".reveal-item", {
+                opacity: 1,
+                y: 0,
+                stagger: 0.15,
+                duration: 1.2
+            }, "-=1.5");
+        };
+
+        // Initialize state of reveal items for GSAP to handle
+        gsap.set(".reveal-item", { y: 30 });
+    </script>
+</body>
+</html>

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA | Luxury Horology</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 3D & Animation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        silver: '#E5E4E2',
+                        rose: '#B76E79',
+                        dark: '#050505',
+                        muted: '#888888'
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['Lato', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg: #050505;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --gold: #D4AF37;
+            --font-serif: 'Playfair Display', serif;
+            --font-sans: 'Lato', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none; /* Custom cursor implementation below */
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        section {
+            min-height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 5vw 10vw;
+            pointer-events: auto;
+        }
+
+        .hero-title {
+            font-size: clamp(3.5rem, 10vw, 8rem);
+            line-height: 1;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-family: var(--font-serif);
+        }
+
+        .subtitle {
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            color: var(--gold);
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 18px 45px;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            text-decoration: none;
+            font-family: var(--font-serif);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .btn:hover {
+            background: var(--gold);
+            color: var(--bg);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .variant-selectors {
+            display: flex;
+            gap: 25px;
+            margin-top: 30px;
+            pointer-events: auto;
+        }
+
+        .v-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .v-dot::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border: 1px solid transparent;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .v-dot.active::after {
+            border-color: #fff;
+        }
+
+        #tooltip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: rgba(10, 10, 10, 0.85);
+            border: 1px solid var(--gold);
+            padding: 12px 20px;
+            color: #fff;
+            font-family: var(--font-serif);
+            font-size: 1rem;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.3s ease;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            opacity: 0.6;
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .scroll-indicator .line {
+            width: 1px;
+            height: 60px;
+            background: linear-gradient(to bottom, var(--gold), transparent);
+        }
+
+        /* Custom Cursor */
+        #cursor {
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
+        }
+
+        /* Responsive Tweaks */
+        @media (max-width: 768px) {
+            section {
+                padding: 10vh 5vw;
+                text-align: center !important;
+                align-items: center !important;
+            }
+            .hero-title { font-size: 3rem; }
+            .variant-selectors { justify-content: center !important; }
+            p { margin: 0 auto !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="cursor"></div>
+    <div id="tooltip">Component Name</div>
+
+    <div id="canvas-container"></div>
+
+    <main class="content">
+        <!-- Section 1: Hero -->
+        <section id="sec-hero" class="items-start">
+            <span class="subtitle" data-gsap="fade">Introducing</span>
+            <h1 class="hero-title" data-gsap="reveal">AURA<br>Lumière</h1>
+            <p class="max-w-md text-muted leading-relaxed" data-gsap="fade">
+                A procedural masterpiece in horological engineering. Where raw elements meet uncompromising precision and ethereal light.
+            </p>
+            <div class="scroll-indicator">
+                <span>Scroll</span>
+                <div class="line"></div>
+            </div>
+        </section>
+
+        <!-- Section 2: Variations -->
+        <section id="sec-trio" class="items-end text-right">
+            <span class="subtitle" data-gsap="fade">The Trio</span>
+            <h2 class="text-6xl font-serif mb-6" data-gsap="reveal">Select Your Aura</h2>
+            <p class="max-w-sm text-muted ml-auto mb-8" data-gsap="fade">
+                Forged in three distinct elemental expressions. Gold for power, Silver for stealth, and Rose Gold for passion.
+            </p>
+            <div class="variant-selectors justify-end">
+                <div class="v-dot active bg-gold" data-color="gold" title="24K Gold Finish"></div>
+                <div class="v-dot bg-silver" data-color="silver" title="Polished Platinum"></div>
+                <div class="v-dot bg-rose" data-color="rose" title="Brushed Rose Gold"></div>
+            </div>
+        </section>
+
+        <!-- Section 3: Precision -->
+        <section id="sec-precision" class="items-start">
+            <span class="subtitle" data-gsap="fade">Absolute</span>
+            <h2 class="text-6xl font-serif mb-6" data-gsap="reveal">Precision</h2>
+            <p class="max-w-sm text-muted" data-gsap="fade">
+                Minimalist Roman numerals set against a void-black dial. Every tick of the second hand is a testament to internal perfection.
+            </p>
+        </section>
+
+        <!-- Section 4: Brilliance -->
+        <section id="sec-brilliance" class="items-end text-right">
+            <span class="subtitle" data-gsap="fade">The Brilliance</span>
+            <h2 class="text-6xl font-serif mb-6" data-gsap="reveal">Iced Out</h2>
+            <p class="max-w-sm text-muted ml-auto" data-gsap="fade">
+                Surrounded by over 60 meticulously placed VVS-grade synthetic diamonds. Capturing and fracturing light with every micro-movement.
+            </p>
+        </section>
+
+        <!-- Section 5: Assembly -->
+        <section id="sec-assembly" class="items-center text-center">
+            <span class="subtitle" data-gsap="fade">Architecture</span>
+            <h2 class="text-7xl font-serif mb-6" data-gsap="reveal">Assembly</h2>
+            <p class="max-w-lg text-muted mx-auto" data-gsap="fade">
+                Deconstruct the perfection. From the sapphire crystal to the complex gear train housing, witness the layers of craftsmanship.
+            </p>
+        </section>
+
+        <!-- Section 6: Form -->
+        <section id="sec-unisex" class="items-start">
+            <span class="subtitle" data-gsap="fade">Design Language</span>
+            <h2 class="text-6xl font-serif mb-6" data-gsap="reveal">Unisex Form</h2>
+            <p class="max-w-sm text-muted" data-gsap="fade">
+                A profile engineered for universal elegance. The curvature of the case rests flawlessly on any wrist, defying traditional constraints.
+            </p>
+        </section>
+
+        <!-- Section 7: Discovery -->
+        <section id="sec-specs" class="items-end text-right">
+            <span class="subtitle" data-gsap="fade">Interactive</span>
+            <h2 class="text-6xl font-serif mb-6" data-gsap="reveal">Discover</h2>
+            <p class="max-w-sm text-muted ml-auto" data-gsap="fade">
+                Navigate the anatomy of luxury. Interact with the 3D model to reveal the specifications of the AURA Lumière.
+            </p>
+        </section>
+
+        <!-- Section 8: Call to Action -->
+        <section id="sec-footer" class="items-center text-center justify-end pb-24">
+            <h2 class="text-7xl font-serif mb-6" data-gsap="reveal">The Legacy</h2>
+            <p class="max-w-md text-muted mx-auto mb-10" data-gsap="fade">
+                Reserve your piece of procedural history today. Each piece is uniquely generated and verified on-chain.
+            </p>
+            <a href="#" class="btn" data-gsap="fade">Pre-Order Now</a>
+        </section>
+    </main>
+
+    <script>
+        // --- Cursor and Interaction ---
+        const cursor = document.getElementById('cursor');
+        const tooltip = document.getElementById('tooltip');
+        
+        document.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
+            if (tooltip.style.opacity === "1") {
+                tooltip.style.left = e.clientX + 'px';
+                tooltip.style.top = (e.clientY - 20) + 'px';
+            }
+        });
+
+        // --- Three.js Setup ---
+        let scene, camera, renderer, watchGroup, hPivot, mPivot, sPivot;
+        const materials = {};
+
+        function init3D() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050505);
+            scene.fog = new THREE.FogExp2(0x050505, 0.015);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 0, 15);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+
+            const blueLight = new THREE.PointLight(0x0044ff, 1);
+            blueLight.position.set(-5, 0, 2);
+            scene.add(blueLight);
+
+            createMaterials();
+            createWatch();
+            setupScrollAnimations();
+            animate();
+        }
+
+        function createMaterials() {
+            materials.gold = new THREE.MeshStandardMaterial({ color: 0xD4AF37, metalness: 1, roughness: 0.15 });
+            materials.silver = new THREE.MeshStandardMaterial({ color: 0xE5E4E2, metalness: 1, roughness: 0.1 });
+            materials.rose = new THREE.MeshStandardMaterial({ color: 0xB76E79, metalness: 1, roughness: 0.15 });
+            materials.dial = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 0.5, roughness: 0.8 });
+            materials.glass = new THREE.MeshPhysicalMaterial({ 
+                color: 0xffffff, metalness: 0, roughness: 0, 
+                transmission: 1, ior: 1.5, thickness: 0.2, 
+                transparent: true, opacity: 0.3 
+            });
+            materials.diamond = new THREE.MeshPhysicalMaterial({ 
+                color: 0xffffff, metalness: 0.1, roughness: 0, 
+                transmission: 0.9, ior: 2.4, clearcoat: 1 
+            });
+            materials.hands = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.8, roughness: 0.2 });
+            materials.movement = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9, roughness: 0.4 });
+        }
+
+        function createWatch() {
+            watchGroup = new THREE.Group();
+            scene.add(watchGroup);
+
+            // Groups for exploded view
+            const gCase = new THREE.Group();
+            const gBezel = new THREE.Group();
+            const gDial = new THREE.Group();
+            const gHands = new THREE.Group();
+            const gGlass = new THREE.Group();
+            const gMovement = new THREE.Group();
+
+            watchGroup.add(gMovement, gCase, gBezel, gDial, gHands, gGlass);
+
+            // 1. Case
+            const caseGeo = new THREE.CylinderGeometry(3, 3.2, 0.8, 64);
+            const caseMesh = new THREE.Mesh(caseGeo, materials.gold);
+            caseMesh.rotation.x = Math.PI / 2;
+            caseMesh.name = "Main Case";
+            gCase.add(caseMesh);
+
+            // 2. Bezel
+            const bezelGeo = new THREE.TorusGeometry(3.1, 0.15, 16, 100);
+            const bezelMesh = new THREE.Mesh(bezelGeo, materials.gold);
+            bezelMesh.name = "Polished Bezel";
+            gBezel.add(bezelMesh);
+
+            // 3. Diamonds
+            const diamondGeo = new THREE.OctahedronGeometry(0.08, 0);
+            for(let i=0; i<60; i++) {
+                const angle = (i / 60) * Math.PI * 2;
+                const d = new THREE.Mesh(diamondGeo, materials.diamond);
+                d.position.x = Math.cos(angle) * 3.1;
+                d.position.y = Math.sin(angle) * 3.1;
+                d.position.z = 0.1;
+                gBezel.add(d);
+            }
+
+            // 4. Dial
+            const dialGeo = new THREE.CircleGeometry(2.9, 64);
+            const dialMesh = new THREE.Mesh(dialGeo, materials.dial);
+            dialMesh.name = "Onyx Dial";
+            gDial.add(dialMesh);
+
+            // 5. Hands
+            hPivot = new THREE.Group();
+            mPivot = new THREE.Group();
+            sPivot = new THREE.Group();
+            gHands.add(hPivot, mPivot, sPivot);
+
+            const hHand = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 0.05), materials.hands);
+            hHand.position.y = 0.75;
+            hPivot.add(hHand);
+
+            const mHand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.2, 0.05), materials.hands);
+            mHand.position.y = 1.1;
+            mPivot.add(mHand);
+
+            const sHand = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.5, 0.02), materials.hands);
+            sHand.position.y = 1.25;
+            sPivot.add(sHand);
+            sPivot.position.z = 0.1;
+
+            // 6. Glass
+            const glassGeo = new THREE.CylinderGeometry(3, 3, 0.1, 64);
+            const glassMesh = new THREE.Mesh(glassGeo, materials.glass);
+            glassMesh.rotation.x = Math.PI / 2;
+            glassMesh.position.z = 0.3;
+            glassMesh.name = "Sapphire Crystal";
+            gGlass.add(glassMesh);
+
+            // 7. Movement (internal simplified)
+            const moveGeo = new THREE.CylinderGeometry(2.8, 2.8, 0.4, 32);
+            const moveMesh = new THREE.Mesh(moveGeo, materials.movement);
+            moveMesh.rotation.x = Math.PI / 2;
+            moveMesh.position.z = -0.5;
+            moveMesh.name = "Calibre A1";
+            gMovement.add(moveMesh);
+
+            // Store original Z for reset
+            [gCase, gBezel, gDial, gHands, gGlass, gMovement].forEach(g => {
+                g.userData.origZ = g.position.z;
+            });
+
+            // Handle hover interaction for labels
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(watchGroup.children, true);
+
+                if (intersects.length > 0) {
+                    const obj = intersects[0].object;
+                    if (obj.name) {
+                        tooltip.innerText = obj.name;
+                        tooltip.style.opacity = "1";
+                        cursor.style.transform = "scale(2.5)";
+                    }
+                } else {
+                    tooltip.style.opacity = "0";
+                    cursor.style.transform = "scale(1)";
+                }
+            });
+        }
+
+        function setupScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".content",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1.5
+                }
+            });
+
+            // Initial State
+            watchGroup.position.x = 2;
+            watchGroup.rotation.y = -0.5;
+
+            // Step 1: Move to Trio (Right align)
+            tl.to(watchGroup.position, { x: -3, duration: 2 }, 0)
+              .to(watchGroup.rotation, { y: 0.5, duration: 2 }, 0);
+
+            // Step 2: Precision (Center zoom)
+            tl.to(camera.position, { z: 8, duration: 2 }, 2)
+              .to(watchGroup.position, { x: 3, duration: 2 }, 2);
+
+            // Step 3: Brilliance (Focus on bezel)
+            tl.to(watchGroup.rotation, { x: 0.8, y: -0.5, duration: 2 }, 4)
+              .to(camera.position, { z: 10, duration: 2 }, 4);
+
+            // Step 4: Assembly (Exploded View)
+            const gMovement = watchGroup.children[0];
+            const gCase = watchGroup.children[1];
+            const gBezel = watchGroup.children[2];
+            const gDial = watchGroup.children[3];
+            const gHands = watchGroup.children[4];
+            const gGlass = watchGroup.children[5];
+
+            tl.to(watchGroup.position, { x: 0, duration: 2 }, 6)
+              .to(watchGroup.rotation, { x: 0, y: 0, duration: 2 }, 6)
+              .to(gGlass.position, { z: 4, duration: 2 }, 6)
+              .to(gBezel.position, { z: 2.5, duration: 2 }, 6)
+              .to(gHands.position, { z: 1.5, duration: 2 }, 6)
+              .to(gCase.position, { z: -1, duration: 2 }, 6)
+              .to(gMovement.position, { z: -3, duration: 2 }, 6);
+
+            // Step 5: Unisex (Side Profile)
+            tl.to(watchGroup.rotation, { y: Math.PI / 2, x: 0.2, duration: 2 }, 8)
+              .to(watchGroup.position, { x: 2, duration: 2 }, 8)
+              // Reset explosion
+              .to([gGlass.position, gBezel.position, gHands.position, gCase.position, gMovement.position], { z: 0, duration: 1 }, 8);
+
+            // Step 6: Specs (Full view rotate)
+            tl.to(watchGroup.position, { x: -3, duration: 2 }, 10)
+              .to(watchGroup.rotation, { y: Math.PI * 2 + 0.5, duration: 4 }, 10);
+
+            // Step 7: Footer (Final Hero Pose)
+            tl.to(watchGroup.position, { x: 0, y: 1, duration: 2 }, 14)
+              .to(camera.position, { z: 12, duration: 2 }, 14)
+              .to(watchGroup.rotation, { x: 0.4, y: Math.PI * 2.1, duration: 2 }, 14);
+
+            // Fade in UI elements
+            gsap.utils.toArray('[data-gsap="fade"]').forEach(el => {
+                gsap.from(el, {
+                    opacity: 0,
+                    y: 20,
+                    duration: 1,
+                    scrollTrigger: {
+                        trigger: el,
+                        start: "top 90%",
+                        toggleActions: "play none none reverse"
+                    }
+                });
+            });
+        }
+
+        function updateMaterial(type) {
+            const material = materials[type];
+            const dots = document.querySelectorAll('.v-dot');
+            dots.forEach(d => d.classList.remove('active'));
+            document.querySelector(`.v-dot[data-color="${type}"]`).classList.add('active');
+
+            watchGroup.traverse(child => {
+                if (child.isMesh && (child.material === materials.gold || child.material === materials.silver || child.material === materials.rose)) {
+                    child.material = material;
+                }
+            });
+        }
+
+        document.querySelectorAll('.v-dot').forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                updateMaterial(e.target.dataset.color);
+            });
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Real-time clock hands
+            const now = new Date();
+            const secs = now.getSeconds() + now.getMilliseconds() / 1000;
+            const mins = now.getMinutes() + secs / 60;
+            const hrs = (now.getHours() % 12) + mins / 60;
+
+            if (hPivot) hPivot.rotation.z = -(hrs / 12) * Math.PI * 2;
+            if (mPivot) mPivot.rotation.z = -(mins / 60) * Math.PI * 2;
+            if (sPivot) sPivot.rotation.z = -(secs / 60) * Math.PI * 2;
+
+            // Subtle floating if not scrolling
+            if (!ScrollTrigger.isScrolling()) {
+                watchGroup.position.y += Math.sin(Date.now() * 0.001) * 0.001;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.onload = init3D;
+    </script>
+</body>
+</html>
